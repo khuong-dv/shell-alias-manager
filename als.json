@@ -1,0 +1,5 @@
+{
+  "name": "bash-alias-manager",
+  "version": "1.0.0",
+  "description": "A modular bash alias manager with CRUD operations, search, and fzf picker"
+}

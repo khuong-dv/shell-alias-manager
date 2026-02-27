@@ -1,0 +1,61 @@
+name: Release Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check version in als.json
+        id: check_version
+        run: |
+          JSON_VERSION=$(jq -r '.version' als.json)
+          SH_VERSION=$(grep 'ALS_VERSION=' src/core.sh | head -1 | cut -d'"' -f2)
+
+          echo "JSON Version: $JSON_VERSION"
+          echo "SH Version: $SH_VERSION"
+
+          if [ "$JSON_VERSION" != "$SH_VERSION" ]; then
+            echo "Version mismatch detected. Updating src/core.sh..."
+            sed -i "s/ALS_VERSION=\"$SH_VERSION\"/ALS_VERSION=\"$JSON_VERSION\"/" src/core.sh
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "new_version=$JSON_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Versions match. No build needed."
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build release
+        if: steps.check_version.outputs.update_needed == 'true'
+        run: |
+          bash build.sh
+          echo "Build completed."
+
+      - name: Commit and push changes
+        if: steps.check_version.outputs.update_needed == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add src/core.sh als_release.sh als.json
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: bump version to v${{ steps.check_version.outputs.new_version }} and rebuild release [skip ci]"
+            git push
+            echo "Changes pushed successfully."
+          fi
