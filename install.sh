@@ -43,15 +43,44 @@ else
   echo -e "  \033[2m${ALS_DATA_FILE}\033[0m"
 fi
 
-# Step 4: Add to .bashrc
-echo -e "\033[1m[4/4]\033[0m Configuring shell..."
-if [[ -f "$BASHRC" ]] && grep -qF '.als/als.sh' "$BASHRC"; then
-  echo -e "  \033[1;33m⚠\033[0m Already configured in ${BASHRC}"
-else
-  echo "" >> "$BASHRC"
-  echo "# als — Bash Alias Manager" >> "$BASHRC"
-  echo "$SOURCE_LINE" >> "$BASHRC"
-  echo -e "  \033[1;32m✔\033[0m Added source line to ${BASHRC}"
+# Step 4: Configure shell(s)
+echo -e "\033[1m[4/4]\033[0m Configuring shell(s)..."
+
+CONFIGURED=()
+
+# ── Bash ──
+BASHRC="$HOME/.bashrc"
+if [[ -f "$BASHRC" ]]; then
+  if grep -qF '.als/als.sh' "$BASHRC"; then
+    echo -e "  \033[1;33m⚠\033[0m bash: Already configured in ${BASHRC}"
+  else
+    echo "" >> "$BASHRC"
+    echo "# als — Bash Alias Manager" >> "$BASHRC"
+    echo "$SOURCE_LINE" >> "$BASHRC"
+    echo -e "  \033[1;32m✔\033[0m bash: Added source line to ${BASHRC}"
+  fi
+  CONFIGURED+=("bash")
+fi
+
+# ── Zsh ──
+ZSHRC="$HOME/.zshrc"
+if [[ -f "$ZSHRC" ]] || command -v zsh &>/dev/null; then
+  touch "$ZSHRC"
+  if grep -qF '.als/als.sh' "$ZSHRC"; then
+    echo -e "  \033[1;33m⚠\033[0m zsh:  Already configured in ${ZSHRC}"
+  else
+    echo "" >> "$ZSHRC"
+    echo "# als — Bash Alias Manager" >> "$ZSHRC"
+    echo "$SOURCE_LINE" >> "$ZSHRC"
+    echo -e "  \033[1;32m✔\033[0m zsh:  Added source line to ${ZSHRC}"
+  fi
+  CONFIGURED+=("zsh")
+fi
+
+if [[ ${#CONFIGURED[@]} -eq 0 ]]; then
+  echo -e "  \033[1;33m⚠\033[0m No supported shell config found."
+  echo -e "  \033[2mManually add this to your shell config:\033[0m"
+  echo -e "    $SOURCE_LINE"
 fi
 
 # Done
@@ -60,8 +89,15 @@ echo -e "\033[1;32m════════════════════�
 echo -e "\033[1;32m  ✔ Installation complete!\033[0m"
 echo -e "\033[1;32m════════════════════════════════════════\033[0m"
 echo ""
+echo -e "  Shells configured: \033[1m${CONFIGURED[*]}\033[0m"
+echo ""
 echo -e "  To activate now, run:"
-echo -e "    \033[1msource ~/.bashrc\033[0m"
+if [[ " ${CONFIGURED[*]} " == *" bash "* ]]; then
+  echo -e "    \033[1msource ~/.bashrc\033[0m"
+fi
+if [[ " ${CONFIGURED[*]} " == *" zsh "* ]]; then
+  echo -e "    \033[1msource ~/.zshrc\033[0m"
+fi
 echo ""
 echo -e "  Or open a new terminal."
 echo ""
