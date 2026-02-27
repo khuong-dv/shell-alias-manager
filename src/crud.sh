@@ -75,6 +75,18 @@ _als_cmd_add() {
     return 1
   fi
 
+  # System command clash warning
+  if command -v "$name" >/dev/null 2>&1; then
+    _als_warn "Lệnh '${name}' đã tồn tại trong hệ thống!"
+    echo -n -e "  ${_ALS_C_RED}Bạn có chắc chắn muốn ghi đè nó thành alias không? [y/N]:${_ALS_C_RESET} "
+    local confirm
+    read -r confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+      _als_info "Đã hủy thêm alias."
+      return 0
+    fi
+  fi
+
   # Check for duplicates
   _als_read_aliases
   local idx
@@ -236,47 +248,122 @@ _als_cmd_delete() {
 # Usage: als --update <name> [--cmd "new command"] [--desc "new desc"]
 _als_cmd_update() {
   local name="$1"
-  shift
+  local new_cmd="" new_desc="" has_cmd=false has_desc=false
+  local idx
 
   if [[ -z "$name" ]]; then
-    _als_error "Usage: als --update <name> [--cmd \"new command\"] [--desc \"new desc\"]"
-    return 1
-  fi
+    _als_read_aliases
 
-  local new_cmd="" new_desc="" has_cmd=false has_desc=false
+    if [[ ${#_ALS_NAMES[@]} -eq 0 ]]; then
+      _als_warn "No aliases to update."
+      return 0
+    fi
 
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --cmd|-c)
-        new_cmd="$2"
-        has_cmd=true
-        shift 2
-        ;;
-      --desc|-d)
-        new_desc="$2"
-        has_desc=true
-        shift 2
-        ;;
-      *)
-        _als_error "Unknown option: $1"
+    # Find max name width
+    local max_name=0 i
+    for (( i=0; i<${#_ALS_NAMES[@]}; i++ )); do
+      local len=${#_ALS_NAMES[$i]}
+      (( len > max_name )) && max_name=$len
+    done
+
+    if command -v fzf &>/dev/null; then
+      local chosen
+      chosen=$(
+        for (( i=0; i<${#_ALS_NAMES[@]}; i++ )); do
+          local desc="${_ALS_DESCS[$i]}"
+          [[ -z "$desc" ]] && desc="—"
+          printf "%-${max_name}s  │  %-40s  │  %s\n" \
+            "${_ALS_NAMES[$i]}" "${_ALS_CMDS[$i]}" "$desc"
+        done | fzf \
+          --prompt="update❯ " \
+          --header="Select alias to UPDATE │ ENTER to confirm │ ESC to cancel" \
+          --height=40% \
+          --reverse \
+          --border=rounded \
+          --color="header:italic:yellow,prompt:blue,pointer:blue"
+      )
+
+      if [[ -z "$chosen" ]]; then
+        _als_info "Cancelled."
+        return 0
+      fi
+
+      name=$(echo "$chosen" | awk '{print $1}')
+    else
+      # Fallback: numbered list
+      _als_header "✏️  Select alias to update"
+      for (( i=0; i<${#_ALS_NAMES[@]}; i++ )); do
+        printf "  ${_ALS_C_YELLOW}%2d${_ALS_C_RESET}) ${_ALS_C_GREEN}%-${max_name}s${_ALS_C_RESET}  %s\n" \
+          $((i+1)) "${_ALS_NAMES[$i]}" "${_ALS_CMDS[$i]}"
+      done
+      echo
+      echo -n -e "  ${_ALS_C_CYAN}Enter number (0 to cancel):${_ALS_C_RESET} "
+      local choice
+      read -r choice
+
+      if [[ -z "$choice" || "$choice" == "0" ]]; then
+        _als_info "Cancelled."
+        return 0
+      fi
+
+      if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#_ALS_NAMES[@]} )); then
+        _als_error "Invalid selection."
         return 1
-        ;;
-    esac
-  done
+      fi
 
-  if [[ "$has_cmd" == false && "$has_desc" == false ]]; then
-    _als_error "Nothing to update. Use --cmd and/or --desc."
-    echo -e "  ${_ALS_C_DIM}Example: als --update gs --cmd \"git status -sb\" --desc \"Short status\"${_ALS_C_RESET}"
-    return 1
-  fi
+      name="${_ALS_NAMES[$((choice-1))]}"
+    fi
 
-  _als_read_aliases
-  local idx
-  idx=$(_als_find_index "$name")
+    idx=$(_als_find_index "$name")
+    
+    if [[ "$idx" -lt 0 ]]; then
+      _als_error "Alias '${_ALS_C_BOLD}${name}${_ALS_C_RESET}' not found."
+      return 1
+    fi
 
-  if [[ "$idx" -lt 0 ]]; then
-    _als_error "Alias '${_ALS_C_BOLD}${name}${_ALS_C_RESET}' not found."
-    return 1
+    local old_cmd="${_ALS_CMDS[$idx]}"
+    local old_desc="${_ALS_DESCS[$idx]}"
+
+    echo -e "  ${_ALS_C_CYAN}Updating alias: ${_ALS_C_GREEN}${name}${_ALS_C_RESET}"
+    read -e -p "  Command: " -i "$old_cmd" -r new_cmd
+    read -e -p "  Description: " -i "$old_desc" -r new_desc
+
+    has_cmd=true
+    has_desc=true
+  else
+    shift
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --cmd|-c)
+          new_cmd="$2"
+          has_cmd=true
+          shift 2
+          ;;
+        --desc|-d)
+          new_desc="$2"
+          has_desc=true
+          shift 2
+          ;;
+        *)
+          _als_error "Unknown option: $1"
+          return 1
+          ;;
+      esac
+    done
+
+    if [[ "$has_cmd" == false && "$has_desc" == false ]]; then
+      _als_error "Nothing to update. Use --cmd and/or --desc."
+      echo -e "  ${_ALS_C_DIM}Example: als --update gs --cmd \"git status -sb\" --desc \"Short status\"${_ALS_C_RESET}"
+      return 1
+    fi
+
+    _als_read_aliases
+    idx=$(_als_find_index "$name")
+
+    if [[ "$idx" -lt 0 ]]; then
+      _als_error "Alias '${_ALS_C_BOLD}${name}${_ALS_C_RESET}' not found."
+      return 1
+    fi
   fi
 
   # Backup
