@@ -10,7 +10,7 @@
 # ============================================================
 
 # ── Build info ──
-# Built: 2026-02-27 10:51:28
+# Built: 2026-02-27 10:56:20
 # Version: 1.0.0
 
 # ═══════════════════════════════════════════════════════════
@@ -382,6 +382,53 @@ _als_cmd_update() {
   _als_success "Updated '${_ALS_C_BOLD}${name}${_ALS_C_RESET}'"
 }
 
+# ─── RESET ────────────────────────────────────────────────────
+# Usage: als --reset [-y]
+_als_cmd_reset() {
+  local force=false
+  [[ "$1" == "-y" || "$1" == "--yes" ]] && force=true
+
+  _als_read_aliases
+  local total=${#_ALS_NAMES[@]}
+
+  if [[ $total -eq 0 ]]; then
+    _als_info "No aliases to reset. Storage is already empty."
+    return 0
+  fi
+
+  _als_warn "This will delete ${_ALS_C_BOLD}ALL ${total} aliases${_ALS_C_RESET}${_ALS_C_YELLOW} from storage."
+
+  if [[ "$force" != true ]]; then
+    echo -n -e "  ${_ALS_C_RED}Are you sure you want to delete all aliases? [y/N]:${_ALS_C_RESET} "
+    local confirm
+    read -r confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+      _als_info "Cancelled. No aliases were deleted."
+      return 0
+    fi
+  fi
+
+  # Backup before reset
+  _als_backup
+
+  # Unalias all from current session
+  local i
+  for (( i=0; i<$total; i++ )); do
+    unalias "${_ALS_NAMES[$i]}" 2>/dev/null
+  done
+
+  # Truncate data file
+  : > "$ALS_DATA_FILE"
+
+  # Clear arrays
+  _ALS_NAMES=()
+  _ALS_CMDS=()
+  _ALS_DESCS=()
+
+  _als_success "All ${_ALS_C_BOLD}${total}${_ALS_C_RESET} aliases have been deleted."
+  echo -e "  ${_ALS_C_DIM}A backup was saved to ${ALS_BACKUP_DIR}/${_ALS_C_RESET}"
+}
+
 # ═══════════════════════════════════════════════════════════
 # Module: search.sh
 # ═══════════════════════════════════════════════════════════
@@ -733,6 +780,10 @@ als() {
       shift
       _als_cmd_update "$@"
       ;;
+    --reset)
+      shift
+      _als_cmd_reset "$@"
+      ;;
 
     # ── Search ──
     --search|-s)
@@ -810,6 +861,7 @@ ${_ALS_C_BOLD}MANAGE ALIASES${_ALS_C_RESET}
   ${_ALS_C_GREEN}als --add --file${_ALS_C_RESET} <path>                    Add aliases from file
   ${_ALS_C_GREEN}als --delete${_ALS_C_RESET} <name> [-y]                   Delete an alias
   ${_ALS_C_GREEN}als --update${_ALS_C_RESET} <name> [--cmd c] [--desc d]   Update an alias
+  ${_ALS_C_GREEN}als --reset${_ALS_C_RESET} [-y]                           Delete ALL aliases
 
 ${_ALS_C_BOLD}SEARCH & BROWSE${_ALS_C_RESET}
   ${_ALS_C_GREEN}als --search${_ALS_C_RESET} <keyword>           Search by name/command/description
@@ -846,7 +898,7 @@ _als_completion() {
 
   # Complete subcommands after 'als'
   if [[ "$prev" == "als" ]]; then
-    local subcommands="--add --delete --update --search --list --import --export --reload --count --version --help"
+    local subcommands="--add --delete --update --reset --search --list --import --export --reload --count --version --help"
 
     # Add alias names to completions
     _als_read_aliases

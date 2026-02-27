@@ -32,26 +32,12 @@ echo -e "  \033[1;32m✔\033[0m Copied to ${INSTALL_DIR}/als.sh"
 # Step 3: Create default aliases if data file doesn't exist
 ALS_DATA_FILE="$HOME/.als_aliases"
 if [[ ! -f "$ALS_DATA_FILE" ]]; then
-  echo -e "\033[1m[3/4]\033[0m Creating default aliases..."
+  echo -e "\033[1m[3/4]\033[0m Creating alias data file..."
   cat > "$ALS_DATA_FILE" <<'EOF'
-# als — Default aliases
+# als — Alias storage
 # Format: name|command|description
-gs|git status|Show git working tree status
-gp|git pull|Pull latest changes from remote
-gpp|git push|Push commits to remote
-gl|git log --oneline --graph --decorate -20|Git log with graph
-ga|git add .|Stage all changes
-gcm|git commit -m|Commit with message
-gco|git checkout|Switch branches
-gd|git diff|Show changes
-ll|ls -lah --color=auto|Detailed file listing
-la|ls -A --color=auto|List all including hidden
-cls|clear|Clear terminal
-reload|source ~/.bashrc|Reload bash configuration
-myip|curl -s https://ifconfig.me && echo|Show public IP
-ports|ss -tulpn|Show listening ports
 EOF
-  echo -e "  \033[1;32m✔\033[0m Created ${ALS_DATA_FILE} with default aliases"
+  echo -e "  \033[1;32m✔\033[0m Created ${ALS_DATA_FILE}"
 else
   echo -e "\033[1m[3/4]\033[0m Alias data file already exists, keeping it."
   echo -e "  \033[2m${ALS_DATA_FILE}\033[0m"

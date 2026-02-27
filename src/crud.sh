@@ -226,3 +226,50 @@ _als_cmd_update() {
   fi
   _als_success "Updated '${_ALS_C_BOLD}${name}${_ALS_C_RESET}'"
 }
+
+# ─── RESET ────────────────────────────────────────────────────
+# Usage: als --reset [-y]
+_als_cmd_reset() {
+  local force=false
+  [[ "$1" == "-y" || "$1" == "--yes" ]] && force=true
+
+  _als_read_aliases
+  local total=${#_ALS_NAMES[@]}
+
+  if [[ $total -eq 0 ]]; then
+    _als_info "No aliases to reset. Storage is already empty."
+    return 0
+  fi
+
+  _als_warn "This will delete ${_ALS_C_BOLD}ALL ${total} aliases${_ALS_C_RESET}${_ALS_C_YELLOW} from storage."
+
+  if [[ "$force" != true ]]; then
+    echo -n -e "  ${_ALS_C_RED}Are you sure you want to delete all aliases? [y/N]:${_ALS_C_RESET} "
+    local confirm
+    read -r confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+      _als_info "Cancelled. No aliases were deleted."
+      return 0
+    fi
+  fi
+
+  # Backup before reset
+  _als_backup
+
+  # Unalias all from current session
+  local i
+  for (( i=0; i<$total; i++ )); do
+    unalias "${_ALS_NAMES[$i]}" 2>/dev/null
+  done
+
+  # Truncate data file
+  : > "$ALS_DATA_FILE"
+
+  # Clear arrays
+  _ALS_NAMES=()
+  _ALS_CMDS=()
+  _ALS_DESCS=()
+
+  _als_success "All ${_ALS_C_BOLD}${total}${_ALS_C_RESET} aliases have been deleted."
+  echo -e "  ${_ALS_C_DIM}A backup was saved to ${ALS_BACKUP_DIR}/${_ALS_C_RESET}"
+}

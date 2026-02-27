@@ -42,6 +42,10 @@ als() {
       shift
       _als_cmd_update "$@"
       ;;
+    --reset)
+      shift
+      _als_cmd_reset "$@"
+      ;;
 
     # ── Search ──
     --search|-s)
@@ -119,6 +123,7 @@ ${_ALS_C_BOLD}MANAGE ALIASES${_ALS_C_RESET}
   ${_ALS_C_GREEN}als --add --file${_ALS_C_RESET} <path>                    Add aliases from file
   ${_ALS_C_GREEN}als --delete${_ALS_C_RESET} <name> [-y]                   Delete an alias
   ${_ALS_C_GREEN}als --update${_ALS_C_RESET} <name> [--cmd c] [--desc d]   Update an alias
+  ${_ALS_C_GREEN}als --reset${_ALS_C_RESET} [-y]                           Delete ALL aliases
 
 ${_ALS_C_BOLD}SEARCH & BROWSE${_ALS_C_RESET}
   ${_ALS_C_GREEN}als --search${_ALS_C_RESET} <keyword>           Search by name/command/description
@@ -155,7 +160,7 @@ _als_completion() {
 
   # Complete subcommands after 'als'
   if [[ "$prev" == "als" ]]; then
-    local subcommands="--add --delete --update --search --list --import --export --reload --count --version --help"
+    local subcommands="--add --delete --update --reset --search --list --import --export --reload --count --version --help"
 
     # Add alias names to completions
     _als_read_aliases
