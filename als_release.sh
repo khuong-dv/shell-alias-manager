@@ -10,7 +10,7 @@
 # ============================================================
 
 # ── Build info ──
-# Built: 2026-02-27 11:07:26
+# Built: 2026-02-27 11:23:21
 # Version: 1.0.0
 
 # ═══════════════════════════════════════════════════════════
@@ -257,19 +257,81 @@ _als_cmd_add() {
 }
 
 # ─── DELETE ───────────────────────────────────────────────────
-# Usage: als --delete <name> [-y]
+# Usage: als --delete [name] [-y]
 _als_cmd_delete() {
   local name="$1"
   local force=false
 
-  if [[ "$2" == "-y" || "$2" == "--yes" ]]; then
+  if [[ "$1" == "-y" || "$1" == "--yes" ]]; then
+    force=true
+    name=""
+  elif [[ "$2" == "-y" || "$2" == "--yes" ]]; then
     force=true
   fi
 
+  # No name → interactive fzf picker
   if [[ -z "$name" ]]; then
-    _als_error "Usage: als --delete <name> [-y]"
-    echo -e "  ${_ALS_C_DIM}Example: als --delete gs${_ALS_C_RESET}"
-    return 1
+    _als_read_aliases
+
+    if [[ ${#_ALS_NAMES[@]} -eq 0 ]]; then
+      _als_warn "No aliases to delete."
+      return 0
+    fi
+
+    # Find max name width
+    local max_name=0 i
+    for (( i=0; i<${#_ALS_NAMES[@]}; i++ )); do
+      local len=${#_ALS_NAMES[$i]}
+      (( len > max_name )) && max_name=$len
+    done
+
+    if command -v fzf &>/dev/null; then
+      local chosen
+      chosen=$(
+        for (( i=0; i<${#_ALS_NAMES[@]}; i++ )); do
+          local desc="${_ALS_DESCS[$i]}"
+          [[ -z "$desc" ]] && desc="—"
+          printf "%-${max_name}s  │  %-40s  │  %s\n" \
+            "${_ALS_NAMES[$i]}" "${_ALS_CMDS[$i]}" "$desc"
+        done | fzf \
+          --prompt="delete❯ " \
+          --header="Select alias to DELETE │ ENTER to confirm │ ESC to cancel" \
+          --height=40% \
+          --reverse \
+          --border=rounded \
+          --color="header:italic:yellow,prompt:red,pointer:red"
+      )
+
+      if [[ -z "$chosen" ]]; then
+        _als_info "Cancelled."
+        return 0
+      fi
+
+      name=$(echo "$chosen" | awk '{print $1}')
+    else
+      # Fallback: numbered list
+      _als_header "🗑  Select alias to delete"
+      for (( i=0; i<${#_ALS_NAMES[@]}; i++ )); do
+        printf "  ${_ALS_C_YELLOW}%2d${_ALS_C_RESET}) ${_ALS_C_GREEN}%-${max_name}s${_ALS_C_RESET}  %s\n" \
+          $((i+1)) "${_ALS_NAMES[$i]}" "${_ALS_CMDS[$i]}"
+      done
+      echo
+      echo -n -e "  ${_ALS_C_CYAN}Enter number (0 to cancel):${_ALS_C_RESET} "
+      local choice
+      read -r choice
+
+      if [[ -z "$choice" || "$choice" == "0" ]]; then
+        _als_info "Cancelled."
+        return 0
+      fi
+
+      if ! [[ "$choice" =~ ^[0-9]+$ ]] || (( choice < 1 || choice > ${#_ALS_NAMES[@]} )); then
+        _als_error "Invalid selection."
+        return 1
+      fi
+
+      name="${_ALS_NAMES[$((choice-1))]}"
+    fi
   fi
 
   _als_read_aliases
