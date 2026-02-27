@@ -35,14 +35,36 @@ _als_cmd_add() {
 
   # Extract name and command from positional args
   if [[ ${#positional[@]} -lt 2 ]]; then
-    _als_error "Usage: als --add <name> <command> [--desc \"description\"]"
-    echo -e "  ${_ALS_C_DIM}Example: als --add gs \"git status\" --desc \"Show git status\"${_ALS_C_RESET}"
-    return 1
-  fi
+    # Interactive mode: prompt for each field
+    _als_header "➕ Add new alias"
 
-  name="${positional[0]}"
-  # Join remaining positional args as the command
-  cmd="${positional[*]:1}"
+    if [[ ${#positional[@]} -ge 1 ]]; then
+      name="${positional[0]}"
+      echo -e "  ${_ALS_C_CYAN}Name:${_ALS_C_RESET}        ${name}"
+    else
+      echo -n -e "  ${_ALS_C_CYAN}Name:${_ALS_C_RESET}        "
+      read -r name
+      if [[ -z "$name" ]]; then
+        _als_error "Name cannot be empty. Aborted."
+        return 1
+      fi
+    fi
+
+    echo -n -e "  ${_ALS_C_CYAN}Command:${_ALS_C_RESET}     "
+    read -r cmd
+    if [[ -z "$cmd" ]]; then
+      _als_error "Command cannot be empty. Aborted."
+      return 1
+    fi
+
+    echo -n -e "  ${_ALS_C_CYAN}Description:${_ALS_C_RESET} ${_ALS_C_DIM}(optional, press Enter to skip)${_ALS_C_RESET} "
+    read -r desc
+    echo
+  else
+    name="${positional[0]}"
+    # Join remaining positional args as the command
+    cmd="${positional[*]:1}"
+  fi
 
   # Validate name
   _als_validate_name "$name" || return 1
