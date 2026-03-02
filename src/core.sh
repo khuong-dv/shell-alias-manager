@@ -4,7 +4,7 @@
 # ============================================================
 
 # ─── Paths ────────────────────────────────────────────────────
-ALS_VERSION="1.0.0"
+ALS_VERSION="1.0.1"
 ALS_DATA_FILE="${ALS_DATA_FILE:-$HOME/.als_aliases}"
 ALS_BACKUP_DIR="${ALS_BACKUP_DIR:-$HOME/.als_backups}"
 
