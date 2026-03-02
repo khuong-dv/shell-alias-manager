@@ -16,7 +16,9 @@ _Read this in other languages: [English](#english), [Tiếng Việt](#tiếng-vi
 - **Interactive Forms & Picker**:
   - `als --add` opens an interactive form to input alias details.
   - `als --delete` opens an fzf fuzzy finder to select aliases to delete.
+  - `als --update` opens an fzf picker to select an alias followed by an interactive edit form.
   - `als` opens the main fzf fuzzy finder to search and execute aliases.
+- **Clash Warning**: Automatically detects if a new alias name conflicts with an existing system command and warns the user.
 - **Full CRUD**: `--add`, `--delete`, `--update`, and `--reset` aliases with optional descriptions.
 - **Search**: Keyword search across names, commands, and descriptions.
 - **Import/Export**: Bulk load aliases from file or export to share with others.
@@ -81,7 +83,9 @@ gp|git pull|Pull latest changes
 - **Nhập liệu & Chọn tương tác**:
   - Chạy `als --add` sẽ mở form nhập liệu tương tác (không cần nhớ cú pháp dài).
   - Chạy `als --delete` sẽ mở giao diện chọn fzf để tìm và xóa alias an toàn.
+  - Chạy `als --update` sẽ mở giao diện chọn fzf để tìm và sửa alias với form điền sẵn nội dung cũ.
   - Chạy `als` sẽ mở giao diện fzf chính để tìm và chạy alias.
+- **Cảnh báo trùng lệnh**: Tự động phát hiện khi đặt tên alias trùng với lệnh có sẵn của hệ thống và cảnh báo người dùng.
 - **Quản lý đầy đủ (CRUD)**: `--add` (thêm), `--delete` (xóa), `--update` (sửa), và `--reset` (xóa toàn bộ) kèm tính năng mô tả (description).
 - **Tìm kiếm**: Tìm từ khóa trên cả tên, lệnh và mô tả.
 - **Nhập/Xuất file**: Import hàng loạt alias từ file text hoặc export ra file để chia sẻ.
@@ -116,6 +120,7 @@ als --delete gs                  # Xóa chi tiết một alias tên là 'gs'
 als --reset                      # Xóa TOÀN BỘ alias (có cơ chế hỏi xác nhận)
 
 # --- Sửa (Update) ---
+als --update                     # Mở giao diện fzf chọn alias + form sửa có điền sẵn giá trị cũ
 als --update gs --cmd "git status -sb" --desc "Short status"
 
 # --- Tìm kiếm & Xem biểu đồ ---
