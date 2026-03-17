@@ -10,7 +10,7 @@
 # ============================================================
 
 # ── Build info ──
-# Built: 2026-03-02 03:39:46
+# Built: 2026-03-17 22:59:35
 # Version: 1.0.1
 
 # ═══════════════════════════════════════════════════════════
@@ -1112,7 +1112,4 @@ if [[ $(_als_count) -eq 0 ]]; then
   echo -e "  ${_ALS_C_DIM}als --import my_aliases.txt${_ALS_C_RESET}"
 fi
 
-if ! command -v fzf &>/dev/null; then
-  _als_info "Tip: Install ${_ALS_C_BOLD}fzf${_ALS_C_RESET} for interactive picker → ${_ALS_C_DIM}sudo apt install fzf${_ALS_C_RESET}"
-fi
 

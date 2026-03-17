@@ -17,6 +17,17 @@ echo "  ║   als — Bash Alias Manager Installer  ║"
 echo "  ╚═══════════════════════════════════════╝"
 echo -e "\033[0m"
 
+# Step 0: Check for fzf dependency
+echo -e "\033[1m[0/4]\033[0m Checking dependencies..."
+if ! command -v fzf &>/dev/null; then
+  echo -e "  \033[1;31m✘\033[0m Error: fzf is not installed!"
+  echo "    als requires fzf for its interactive features."
+  echo "    Please install fzf first: https://github.com/junegunn/fzf"
+  exit 1
+fi
+echo -e "  \033[1;32m✔\033[0m fzf is installed."
+echo ""
+
 # Step 1: Build release
 echo -e "\033[1m[1/4]\033[0m Building release..."
 bash "${SCRIPT_DIR}/build.sh"
@@ -104,5 +115,5 @@ echo ""
 echo -e "  Quick start:"
 echo -e "    \033[1mals --help\033[0m        Show usage"
 echo -e "    \033[1mals --list\033[0m        Show all aliases"
-echo -e "    \033[1mals\033[0m              Interactive picker (requires fzf)"
+echo -e "    \033[1mals\033[0m              Interactive picker"
 echo ""

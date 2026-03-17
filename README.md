@@ -43,6 +43,8 @@ Best for contributors or those who want to customize the tool.
 ```bash
 git clone <repo-url> bash-alias-manager
 cd bash-alias-manager
+
+# Ensure fzf is installed before running installer
 bash install.sh
 ```
 
@@ -104,6 +106,8 @@ Dành cho người muốn đóng góp hoặc tùy chỉnh sâu dự án.
 ```bash
 git clone <repo-url> bash-alias-manager
 cd bash-alias-manager
+
+# Đảm bảo đã cài đặt fzf trước khi chạy installer
 bash install.sh
 ```
 
